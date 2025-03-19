@@ -20,7 +20,7 @@ struct Image{
             throw std::string "Pas le bon format ";
             return;
         }
-        file>> nbColonnes >> nbLignes >> max Colors; // On récupère les caractéristiques de l'image
+        file>> nbColonnes >> nbLignes >> maxColor; // On récupère les caractéristiques de l'image
         pixels.resize(nbLignes, std::vector<std::vector<int>>(nbColonnes, std::vector<int>(3)));
         // On lit les données de chaque pixels
         for (int i = 0; i < nbLignes; ++i) {
