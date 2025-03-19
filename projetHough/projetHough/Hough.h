@@ -15,7 +15,9 @@ struct Hough{
     std::vector<std::vector<int>> points;
 
     Hough(Image image):{
-      std::vector<std::vector<int>> vec(image.nbLignes,std::vector<int> ligne(image.nbColonnes)
+      std::vector<int> ligne(image.nbColonnes);
+      std::vector<std::vector<int>> vec(image.nbLignes,ligne);
+      points=vec;
 
 };
 
