@@ -11,13 +11,13 @@ struct Image{
     Image(const std::string& fichier){
         std::ifstream file(fichier);
         if (!file){
-            throw std::string "Problème lors de l'ouverture du fichier";
+            throw std::string("Problème lors de l'ouverture du fichier");
             return;
         }
         std::string format;
         file >>format;
         if (format !="P3"){
-            throw std::string "Pas le bon format ";
+            throw std::string("Pas le bon format ");
             return;
         }
         file>> nbColonnes >> nbLignes >> maxColor; // On récupère les caractéristiques de l'image
