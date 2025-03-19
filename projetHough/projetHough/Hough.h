@@ -38,11 +38,11 @@ struct Image{
 struct Hough{
     std::vector<std::vector<int>> points;
 
-    Hough(Image image):{
+    Hough(Image image){
       std::vector<int> ligne(image.nbColonnes);
       std::vector<std::vector<int>> vec(image.nbLignes,ligne);
       points=vec;
-
+    }
 };
 
 
