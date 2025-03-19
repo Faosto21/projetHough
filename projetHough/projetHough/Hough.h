@@ -4,8 +4,8 @@
 
 struct Image{
     std::vector<std::vector<std::vector<int>>> pixels;
-    int nbColonnes;
-    int nbLignes;
+    size_t nbColonnes;
+    size_t nbLignes;
     int maxColor;
 
     Image(const std::string& fichier){
@@ -20,11 +20,23 @@ struct Image{
             throw std::string("Pas le bon format ");
             return;
         }
-        file>> nbColonnes >> nbLignes >> maxColor; // On récupère les caractéristiques de l'image
+
+        auto skip_comments = [&file]() { // Fonction pour skip les commentaires pour la lecture du fichier
+            char c;
+            while (file >> std::ws && file.peek() == '#') { //
+                file.ignore(1024, '\n');
+            }
+        };
+
+        skip_comments();
+        file>> nbColonnes >> nbLignes ; // On récupère les caractéristiques de l'image
+        skip_comments();
+        file >>maxColor;
+        std::cout << "Colonnes: " << nbColonnes << ", Lignes: " << nbLignes << ", maxColor: " << maxColor << std::endl;
         pixels.resize(nbLignes, std::vector<std::vector<int>>(nbColonnes, std::vector<int>(3)));
         // On lit les données de chaque pixels
-        for (int i = 0; i < nbLignes; ++i) {
-            for (int j = 0; j < nbColonnes; ++j) {
+        for (size_t i = 0; i < nbLignes; ++i) {
+            for (size_t j = 0; j < nbColonnes; ++j) {
                 file >> pixels[i][j][0] >> pixels[i][j][1] >> pixels[i][j][2]; // On lie dans l'ordre Rouge, Vert, Bleu
             }
         }
@@ -38,14 +50,13 @@ struct Image{
 struct Hough{
     std::vector<std::vector<int>> points;
 
-    Hough(Image image){
-      std::vector<int> ligne(image.nbColonnes);
-      std::vector<std::vector<int>> vec(image.nbLignes,ligne);
-      points=vec;
+    Hough(const Image& image){
+      points.resize(image.nbLignes,std::vector<int>(image.nbColonnes, 0));
     }
 };
 
 
 int main(){
+    Image image("imageM1.ppm");
     return 0;
 }
