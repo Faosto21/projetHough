@@ -118,33 +118,53 @@ struct Hough_polaire{
     Hough_polaire(const Image& image){
         int largeur=image.nbColonnes;
         int hauteur=image.nbLignes;
-        rho_max=static_cast<int>(std::floor(std::sqrt(std::pow(largeur,2)+std::pow(hauteur,2))));
+        rho_max=static_cast<int>(std::floor(std::sqrt(std::pow(largeur,2)+std::pow(hauteur,2))))/2;
+        std::cout << "rhomax =" << rho_max<<std::endl;
         int nb_step=2*rho_max/step;
         compteur_droite.resize(180,std::vector<int>(nb_step,0));
         for (size_t i=0;i<image.nbLignes;i++){
             for(size_t j=0;j<image.nbColonnes;j++){
-                if (Bord(image.pixels[i][j])){
+                if (Bord(image.pixels,i,j)){
                     build_curve(i,j);
                 }
             }
         }
 
     }
-    bool Bord(const std::vector<int>& pixel){
-        int intensite = (pixel[0]+pixel[1]+pixel[2])/3;
-        return intensite<128;
+    bool Bord(const std::vector<std::vector<std::vector<int>>>& pixels, size_t x, size_t y) {
+        int hauteur = pixels.size();
+        int largeur = pixels[0].size();
+
+        auto intensity = [&](int i, int j) { //Fonction qui calcule l'intensité de chaque pixel
+            return (pixels[i][j][0] + pixels[i][j][1] + pixels[i][j][2]) / 3;
+        };
+
+        // On vérifie si on est pas sur les bords
+        if (x <= 0 || x >= hauteur - 1 || y <= 0 || y >= largeur - 1) {
+            return false;
+        }
+
+        // On calcule le gradient dans chaque direction
+        int gx = intensity(x + 1, y) - intensity(x - 1, y);
+        int gy = intensity(x, y + 1) - intensity(x, y - 1);
+
+        int gradient = std::sqrt(gx * gx + gy * gy);
+
+        //
+        return gradient > 60;
     }
 
     void build_curve(size_t x, size_t y){
+        std:: cout << "x :" << x << ", y:" << y << std::endl;
         for(int i=0;i<180;i++){
             double rho=x*std::cos(i*M_PI/180)+y*std::sin(i*M_PI/180);
-            int rhoindex=static_cast<int>(rho + rho_max); // on remet l'indice dans [0,200]
-            if (rhoindex>=0 && rhoindex<rho_max){
+            int rhoindex=static_cast<int>((rho + rho_max)/step); // on remet l'indice dans [0,2rho_max]
+            if (rhoindex >= 0 && rhoindex < compteur_droite[0].size()) {
                 compteur_droite[i][rhoindex]++;
             }
         }
     }
-    std::vector<std::pair<double,double>> trouver_droites(int seuil){  // Fonction qui trouve la droite avec le plus de votes dans l'image de Hough
+    std::vector<std::pair<double,double>> trouver_droites(int seuil){  // Fonction qui trouve les droites avec le plus de votes dans l'image de Hough
         std::pair<double,double> droite={0,0};
         std::vector<std::pair<double,double>> vec_droites;
         double teta;
@@ -181,17 +201,59 @@ std::vector<std::pair<double,double>> detect_droite_proche(std::vector<std::pair
         }
     }
     return res;
+}
+
+std::vector<std::pair<double, double>> regrouper_droites(std::vector<std::pair<double, double>> vec_droites, double epsilon_theta, double epsilon_rho)
+{
+    std::vector<std::pair<double, double>> groupes;  //Fonction qui regroupe les droites en groupe de proximité
+    std::vector<bool> utilisé(vec_droites.size(), false); // Et ensuite prends la moyenne du teta et du rho pour choisir un représentant du groupe
+
+    for (size_t i = 0; i < vec_droites.size(); i++) {
+        if (utilisé[i]) continue;
+
+        double somme_theta = vec_droites[i].first;
+        double somme_rho = vec_droites[i].second;
+        int count = 1;
+        utilisé[i] = true;
+
+        for (size_t j = i + 1; j < vec_droites.size(); j++) {
+            if (!utilisé[j] &&
+                std::abs(vec_droites[i].first - vec_droites[j].first) < epsilon_theta &&
+                std::abs(vec_droites[i].second - vec_droites[j].second) < epsilon_rho)
+            {
+                somme_theta += vec_droites[j].first;
+                somme_rho += vec_droites[j].second;
+                count++;
+                utilisé[j] = true;
+            }
+        }
+
+        groupes.push_back({somme_theta / count, somme_rho / count});
+    }
+
+    return groupes;
+}
+
 
 int main(){
     Image image("imageM1.ppm");
-    Hough_naif hough(image);
-    int seuil =10;
+    Hough_polaire hough(image);
+    int seuil =7;
     std::vector<std::pair<double,double>> vec_droites=hough.trouver_droites(seuil);
-    for (auto droite :vec_droites){
-        std::cout << "Droite avec m =" << droite.first<< "et b =" << droite.second << std::endl;
+    std::cout << "Longueur initiale =" << vec_droites.size() << std::endl;
+    std::cout << "En regroupant les droites proches =" << regrouper_droites(vec_droites,0.5,2.5).size() << std::endl;
+    for (auto droite :regrouper_droites(vec_droites,0.5,2.5)){
+        double teta=droite.first;
+        double rho= droite.second;
+        std::cout << "Droite avec teta =" << teta << "et rho =" << rho << std::endl;
+        if (teta==0){
+            std::cout << " Soit x=" << rho << std::endl;
+        }
+        else {
+            std::cout << "y = "<< -std::cos(teta)/std::sin(teta) << "x + "<< rho/std::sin(teta) << std::endl;
+        }
     }
 
 
     return 0;
 }
-
