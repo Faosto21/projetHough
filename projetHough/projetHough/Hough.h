@@ -137,7 +137,7 @@ struct Hough_polaire{
 
     void build_curve(size_t x, size_t y){
         for(int i=0;i<180;i++){
-            double rho=x*std::cos(i*M_PI/180)+x*std::sin(i*M_PI/180);
+            double rho=x*std::cos(i*M_PI/180)+y*std::sin(i*M_PI/180);
             int rhoindex=static_cast<int>(rho + rho_max); // on remet l'indice dans [0,200]
             if (rhoindex>=0 && rhoindex<rho_max){
                 compteur_droite[i][rhoindex]++;
