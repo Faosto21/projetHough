@@ -100,7 +100,57 @@ struct Hough{
 
 };
 
+struct Hough_naif{
+    std::vector<std::vector<int>> compteur_droite;
+    int mmin=-10;
+    int mmax=10;
+    double step=0.1;
+    int nbstep=(mmax-mmin)/step;
 
+    // On teste des valeurs de m allant de -10 à 10
+    // b peut aller de -100 à 100
+    Hough_naif(const Image& image){
+        compteur_droite.resize(nbstep,std::vector<int>(nbstep, 0));
+        for(size_t i=0;i<image.nbLignes;i++){
+            for(size_t j=0;j<image.nbColonnes;j++){
+                if (Bord(image.pixels[i][j])){
+                    build_lines(i,j);
+                    }
+            }
+        }
+    }
+
+    bool Bord(const std::vector<int>& pixel){
+        int intensite = (pixel[0]+pixel[1]+pixel[2])/3;
+        return intensite<128;
+    }
+    void build_lines(size_t x, size_t y){
+        for(int i=0;i<nbstep;i++){
+            double m=mmin+i*step;
+            double b=y-m*x;
+            int mindex=i;
+            int bindex=static_cast<int>(b + compteur_droite.size() / 2); // on remet l'indice dans [0,200]
+            if (bindex>=0 && bindex<compteur_droite.size()){
+                compteur_droite[mindex][bindex]++;
+            }
+        }
+    }
+    std::pair<double,double> trouver_droite(){  // Fonction qui trouve la droite avec le plus de votes dans l'image de Hough
+    int max_value=INT_MIN;
+    std::pair<double,double> droite={0,0};
+    for (int i=0;i<compteur_droite.size();i++){
+        for (int j=0;j<compteur_droite[0].size();j++){
+            int valeur=compteur_droite[i][j];
+            if (valeur>max_value){
+                max_value=valeur;
+                droite={mmin+i*step,j-compteur_droite.size() /2};
+            }
+        }
+    }
+    return  droite;
+    }
+
+};
 int main(){
     Image image("imageM1.ppm");
     Hough hough(image);
