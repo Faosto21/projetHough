@@ -165,6 +165,22 @@ struct Hough_polaire{
 
 };
 
+std::vector<std::pair<double,double>> detect_droite_proche(std::vector<std::pair<double,double>> vec_droites,double epsilon_m,double epsilon_b){
+    std::vector<std::pair<double,double>> res;
+    bool check=false;
+    for (auto droite1 : vec_droites){
+        check=false;
+        for (auto droite2 : res){
+            if ((std::abs(droite1.first-droite2.first < epsilon_m)) && (std::abs(droite1.second-droite2.second))<epsilon_b){
+                check=true;
+                break;
+            }
+        }
+        if (!check){
+            res.push_back(droite1);
+        }
+    }
+    return res;
 
 int main(){
     Image image("imageM1.ppm");
