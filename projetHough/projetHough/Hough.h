@@ -107,3 +107,4 @@ int main(){
     std::cout<< hough.trouver_droite().first <<std::endl;
 
     return 0;
+}
