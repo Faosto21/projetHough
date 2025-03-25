@@ -1,53 +1,16 @@
+//
+//  Hough_Polaire.h
+
+//
+
+#ifndef Hough_Polaire_h
+#define Hough_Polaire_h
+
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <cmath>
-
-
-struct Image{
-    std::vector<std::vector<std::vector<int>>> pixels;
-    size_t nbColonnes;
-    size_t nbLignes;
-    int maxColor;
-
-    Image(const std::string& fichier){
-        std::ifstream file(fichier);
-        if (!file){
-            throw std::string("Problème lors de l'ouverture du fichier");
-            return;
-        }
-        std::string format;
-        file >>format;
-        if (format !="P3"){
-            throw std::string("Pas le bon format ");
-            return;
-        }
-
-        auto skip_comments = [&file]() { // Fonction pour skip les commentaires pour la lecture du fichier
-            char c;
-            while (file >> std::ws && file.peek() == '#') { //
-                file.ignore(1024, '\n');
-            }
-        };
-
-        skip_comments();
-        file>> nbColonnes >> nbLignes ; // On récupère les caractéristiques de l'image
-        skip_comments();
-        file >>maxColor;
-        std::cout << "Colonnes: " << nbColonnes << ", Lignes: " << nbLignes << ", maxColor: " << maxColor << std::endl;
-        pixels.resize(nbLignes, std::vector<std::vector<int>>(nbColonnes, std::vector<int>(3)));
-        // On lit les données de chaque pixels
-        for (size_t i = 0; i < nbLignes; ++i) {
-            for (size_t j = 0; j < nbColonnes; ++j) {
-                file >> pixels[i][j][0] >> pixels[i][j][1] >> pixels[i][j][2]; // On lit dans l'ordre Rouge, Vert, Bleu
-            }
-        }
-
-        file.close();
-        std::cout << "Image chargée "<< std::endl;
-    }
-
-};
+#include "Image.h"
 
 struct Hough_polaire{
     std::vector<std::vector<int>> compteur_droite;
@@ -58,48 +21,89 @@ struct Hough_polaire{
         int largeur=image.nbColonnes;
         int hauteur=image.nbLignes;
         rho_max=static_cast<int>(std::floor(std::sqrt(std::pow(largeur,2)+std::pow(hauteur,2))));
+        std::cout << "rhomax =" << rho_max<<std::endl;
         int nb_step=2*rho_max/step;
         compteur_droite.resize(180,std::vector<int>(nb_step,0));
         for (size_t i=0;i<image.nbLignes;i++){
             for(size_t j=0;j<image.nbColonnes;j++){
-                if (Bord(image.pixels[i][j])){
+                if (Bord(image.pixels,j,i)){
                     build_curve(i,j);
                 }
             }
         }
 
     }
-    bool Bord(const std::vector<int>& pixel){
-        int intensite = (pixel[0]+pixel[1]+pixel[2])/3;
-        return intensite<128;
+    bool Bord(const std::vector<std::vector<std::vector<int>>>& pixels, size_t x, size_t y) {
+        int hauteur = pixels.size();
+        int largeur = pixels[0].size();
+
+        auto intensity = [&](int i, int j) { //Fonction qui calcule l'intensité de chaque pixel
+            return (pixels[i][j][0] + pixels[i][j][1] + pixels[i][j][2]) / 3;
+        };
+
+        // On vérifie si on est pas sur les bords
+        if (x <= 0 || x >= hauteur - 1 || y <= 0 || y >= largeur - 1) {
+            return false;
+        }
+
+        // On calcule le gradient dans chaque direction
+        int gx = intensity(x + 1, y) - intensity(x - 1, y);
+        int gy = intensity(x, y + 1) - intensity(x, y - 1);
+
+        int gradient = std::sqrt(gx * gx + gy * gy);
+
+        //
+        return gradient > 30;
     }
 
     void build_curve(size_t x, size_t y){
+        std:: cout << "x :" << x << ", y:" << y << std::endl;
         for(int i=0;i<180;i++){
-            double rho=x*std::cos(i*M_PI/180)+x*std::sin(i*M_PI/180);
-            int rhoindex=static_cast<int>(rho + rho_max); // on remet l'indice dans [0,200]
-            if (rhoindex>=0 && rhoindex<rho_max){
+            double rho=x*std::cos(i*M_PI/180)+y*std::sin(i*M_PI/180);
+            int rhoindex=static_cast<int>((rho + rho_max)/step); // on remet l'indice dans [0,2rho_max]
+            if (rhoindex >= 0 && rhoindex < compteur_droite[0].size()) {
                 compteur_droite[i][rhoindex]++;
             }
         }
     }
-    std::pair<double,double> trouver_droite(){  // Fonction qui trouve la droite avec le plus de votes dans l'image de Hough
-    int max_value=INT_MIN;
-    std::pair<double,double> droite={0,0};
-    double teta;
-    double rho;
-    for (int i=0;i<180;i++){
-        for (int j=0;j<compteur_droite[0].size();j++){
-            int valeur=compteur_droite[i][j];
-            if (valeur>max_value){
-                max_value=valeur;
-                teta=i*M_PI/180;
-                rho=-rho_max+j*step;
-                droite={teta,rho};
+    std::vector<std::pair<double,double>> trouver_droites(int seuil){  // Fonction qui trouve les droites avec le plus de votes dans l'image de Hough
+        std::pair<double,double> droite={0,0};
+        std::vector<std::pair<double,double>> vec_droites;
+        double theta;
+        double rho;
+        for (int i=0;i<180;i++){
+            for (int j=0;j<compteur_droite[0].size();j++){
+                int valeur=compteur_droite[i][j];
+                if (valeur>seuil){
+                    theta=i*M_PI/180;
+                    rho=-rho_max+j*step;
+                    droite={theta,rho};
+                    vec_droites.push_back(droite);
+                }
             }
         }
-    }
-    return  droite;
+        return vec_droites;
     }
 
 };
+
+std::vector<std::pair<double,double>> detect_droite_proche(std::vector<std::pair<double,double>> vec_droites,double epsilon_m,double epsilon_b){
+    std::vector<std::pair<double,double>> res;
+    bool check=false;
+    for (auto droite1 : vec_droites){
+        check=false;
+        for (auto droite2 : res){
+            if ((std::abs(droite1.first-droite2.first < epsilon_m)) && (std::abs(droite1.second-droite2.second))<epsilon_b){
+                check=true;
+                break;
+            }
+        }
+        if (!check){
+            res.push_back(droite1);
+        }
+    }
+    return res;
+}
+
+
+#endif /* Hough_Polaire_h */
