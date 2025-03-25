@@ -11,9 +11,11 @@
 #include <cmath>
 
 std::vector<std::pair<double, double>> regrouper_droites(std::vector<std::pair<double, double>> vec_droites, double epsilon_theta, double epsilon_rho)
-{
-    std::vector<std::pair<double, double>> groupes;  //Fonction qui regroupe les droites en groupe de proximité
-    std::vector<bool> utilisé(vec_droites.size(), false); // Et ensuite prends la moyenne du theta et du rho pour choisir un représentant du groupe
+{   //Fonction qui regroupe les droites en groupe de proximité
+    // Et ensuite prends la moyenne du theta et du rho pour choisir un représentant du groupe
+
+    std::vector<std::pair<double, double>> groupes;  
+    std::vector<bool> utilisé(vec_droites.size(), false); 
 
     for (size_t i = 0; i < vec_droites.size(); i++) {
         if (utilisé[i]) continue;
