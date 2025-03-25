@@ -41,9 +41,9 @@ struct Image{
             for (size_t j = 0; j < nbColonnes; ++j) {
                 int r, g, b;
                 file >> r >> g >> b;
-                pixels[i][j][0] = r;
-                pixels[i][j][1] = g;
-                pixels[i][j][2] = b;
+                pixels[j][i][0] = r;
+                pixels[j][i][1] = g;
+                pixels[j][i][2] = b;
             }
         }
 
