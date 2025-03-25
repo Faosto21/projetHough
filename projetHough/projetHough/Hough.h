@@ -12,7 +12,7 @@
 
 
 struct Hough_naif{
-    std::vector<std::vector<int>> compteur_droite;
+    std::vector<std::vector<int>> compteur_droite; // Compteur_droite[i][j] compte le nombre de droite qui passe par le point (i,j) dans l'espace de Hough
     int mmin=-10;
     int mmax=10;
     double step=0.1;
@@ -33,6 +33,8 @@ struct Hough_naif{
     }
 
     bool Bord(const std::vector<std::vector<std::vector<int>>>& pixels, size_t x, size_t y) {
+        // Fonction qui détecte si on est sur les bords d'une droite en regardant le gradient de couleur autour du point 
+        // Considère qu'il est au bord s'il le gradient est au dessus d'un certain seuil (si la couleur change beaucoup autour du pixel)
         int hauteur = pixels.size();
         int largeur = pixels[0].size();
 
@@ -56,6 +58,7 @@ struct Hough_naif{
     }
     
     void build_lines(size_t x, size_t y){
+        // Fonction qui va remplir le tableau compteur_droite pour le point(x,y) en rajoutant 1 à tout les points de la droite associé à (x,y) dans l'espace de Hough
         for(int i=0;i<nbstep;i++){
             double m=mmin+i*step;
             double b=y-m*x;
@@ -66,7 +69,8 @@ struct Hough_naif{
             }
         }
     }
-    std::vector<std::pair<double,double>> trouver_droites(int seuil){  // Fonction qui trouve la droite avec le plus de votes dans l'image de Hough
+    std::vector<std::pair<double,double>> trouver_droites(int seuil){ 
+        // Fonction qui trouve les points au dessus d'un certain seuil dans l'image de Hough et donc les droites dans l'espace d'origine
         std::pair<double,double> droite={0,0};
         std::vector<std::pair<double,double>> vec_droites;
         double m;
