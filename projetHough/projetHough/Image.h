@@ -91,7 +91,7 @@ struct Image{
     // Methode pour tracer les droites manuellement dans le cas naif
     
     void tracer_droite(double m, double b, std::vector<int> couleur = {0, 0, 0}) {
-        if (abs(m) <= 1){
+        if (std::abs(m) <= 1){
             for (size_t x = 0; x < nbColonnes; ++x) {
                 double y = m * x + b;
                 int int_y = static_cast<int>(round(y)); // on arrondit y et on le transforme en entier
@@ -113,10 +113,7 @@ struct Image{
     }
     
     // Methode pour tracer les droites manuellement dans le cas polaire
-
     void tracer_droite_polaire(double theta, double rho, std::vector<int> couleur = {0, 0, 0}) {
-        double m = -cos(theta) / sin(theta);
-        double b = rho / sin(theta);
         if (sin(theta) <= 1e-3){
             int x = static_cast<int>(round(rho));
             for (size_t y = 0; y < nbLignes; ++y) {
@@ -124,6 +121,8 @@ struct Image{
             }
         }
         else{
+            double m = -cos(theta) / sin(theta);
+            double b = rho / sin(theta);
             if (std::abs(m) <= 1){
                 for (size_t x = 0; x < nbColonnes; ++x) {
                     double y = m * x + b;
