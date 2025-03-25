@@ -1,61 +1,41 @@
-//
-//  main.cpp
-//  projetHough
-//
-//  Created by Faosto Blanquet on 19/03/2025.
-//
+#include "Hough.h"
+#include "Hough_Polaire.h"
+#include "Image.h"
 
-int main() {
-    cv::Mat imageCV = cv::imread("/Users/faosto/Desktop/imageM1.ppm", cv::IMREAD_GRAYSCALE);
+
+int main(){
     
-    cv::Mat edges;
-    cv::Canny(imageCV, edges, 50, 150);
-    cv::imshow("Canny edge", edges);
-
-    Image imageHough("/Users/faosto/Desktop/imageM1.ppm");
-    Hough_polaire hough(imageHough);
-    std::cout<< hough.trouver_droite().first <<std::endl;
-    std::cout<< hough.trouver_droite().second <<std::endl;
-
+    // On commence par definir a quelle image on s interesse
+    std::string chemin_image = "/Users/faosto/Desktop/imageAvecUnSegment.ppm";
     
-    // Chemin de l'image
-    std::string imagePath = "/Users/faosto/Desktop/imageM1.ppm";
+    // Cas naif
+    Image image_naif(chemin_image);
+    Hough_naif hough_naif(image_naif);
 
-    // Chargement de l'image avec OpenCV
-    cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
-
-    if (image.empty()) {
-        std::cerr << "Erreur : impossible de charger l'image." << std::endl;
-        return 1;
+    int seuil = 10;
+    for (auto droite : regrouper_droites(hough_naif.trouver_droites(seuil), 0.5,5)) {
+        double m = droite.first;
+        double b = droite.second;
+        std::cout << "Droite avec m = " << m << " et b = " << b << std::endl;
+        image_naif.tracer_droite(m, b, {0,255,0});
     }
+    image_naif.sauvegarder("/Users/faosto/Desktop/image_naif.ppm");
 
-    // Debug : dimensions de l'image
-    std::cout << "Image chargée : " << image.cols << " x " << image.rows << std::endl;
-
-    // Exemple de droite : remplace m et b avec les valeurs que tu obtiens via Hough
-    double teta = hough.trouver_droite().first; // coef directeur
-    double rho = hough.trouver_droite().second; // ordonnee à l’origine
     
-//    double m = -cos(teta) / sin(teta);
-//    double b = rho / sin(teta);
+    // Cas polaire
+    Image image_polaire(chemin_image);
+    Hough_polaire hough_polaire(image_polaire);
 
-    double m = hough.trouver_droite().first;
-    double b = hough.trouver_droite().second;
-    
-    
-    // Definition des deux extremites de la droite
-    int x1 = 0;
-    int y1 = static_cast<int>(m * x1 + b);
-    int x2 = image.cols;
-    int y2 = static_cast<int>(m * x2 + b);
+    std::vector<std::pair<double,double>> vec_droites = hough_polaire.trouver_droites(seuil);
 
-    // Dessin de la droite en noir
-    cv::line(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 0), 2);
+    for (auto droite : regrouper_droites(vec_droites, 0.5, 2.5)){
+        double theta = droite.first;
+        double rho = droite.second;
+        std::cout << "Droite avec theta = " << theta << " et rho = " << rho << std::endl;
+        image_polaire.tracer_droite_polaire(theta, rho, {0,255,0});
+    }
+    image_polaire.sauvegarder("/Users/faosto/Desktop/image_polaire.ppm");
 
-    // Affichage du resultat
-    cv::imshow("Ligne détectée", image);
-    //cv::imwrite("/Users/faosto/Desktop/resultat.png", image); // sauvegarde
-
-    cv::waitKey(0);
     return 0;
 }
+
