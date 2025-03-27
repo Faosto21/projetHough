@@ -6,7 +6,7 @@
 int main(){
     
     // On commence par definir a quelle image on s interesse
-    std::string chemin_image = "/Users/faosto/Desktop/imageAvecUnSegment.ppm";
+    std::string chemin_image = "/Users/faosto/Desktop/imageM1.ppm";
     
     // Cas naif
     Image image_naif(chemin_image);
